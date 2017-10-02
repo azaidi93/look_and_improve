@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+    <head>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script> <!-- AngularJS -->
+      <script src="http://code.angularjs.org/1.5.3/angular-route.min.js"></script> <!-- Angular Router -->
+      <script src= "/static/js/app.js"></script> <!-- this will be the brain of our front-end -->
+      <!-- Google Fonts -->
+      <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+      <!-- CSS Reset -->
+      <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+      <!-- Milligram CSS minified -->
+      <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+      <!-- You should properly set the path from the main file. -->
+      <link rel="stylesheet" href="/static/css/style.css" />
+    </head>
+    <body ng-app="vocabApp"> <!-- the name of the vocab quiz app -->
+			 <div ng-view></div>
+    </body>
+</html>
