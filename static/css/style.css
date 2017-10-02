@@ -1,0 +1,33 @@
+body {
+  padding: 10px;
+  font-family: Sans-Serif;
+}
+input{
+  max-width: 200px;
+}
+img{
+  display: block;
+  margin: 0 auto;
+}
+
+table{
+  margin-left: auto;
+  margin-right: auto;
+  width: 75%;
+}
+
+.left {
+    width: 55%;
+    float: left;
+}
+.right {
+    margin-left: 55%;
+}
+
+.top-left {
+    width: 55%;
+    float: left;
+}
+.top-right {
+    margin-left: 55%;
+}

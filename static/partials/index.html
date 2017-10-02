@@ -1,0 +1,70 @@
+<h1>Q-Learning Vocabulary</h1>
+
+<div ng-init = "runQuiz();curr_imgLoad()">
+  <hr/>
+  <block>
+    <label>Search for Word Statistics: </label>
+    <input type="text" ng-model="word"></input>
+    <button ng-click="findLevel()">Search</button>
+  </block>
+  <div>
+    <div class="top-left">
+      <span><b>Level:</b> {{level}}</span>
+      <table id="w">
+        <tr ng-repeat="(key, value) in word_stats">
+          <td><b>{{key}}:</b> {{value}}</td>
+        </tr>
+      </table>
+    </div>
+    <div class="top-right">
+      <table>
+        <caption>Word Q-Table</caption>
+        <tr>
+          <th id="status">Status</th>
+          <th id="remain">Remain</th>
+          <th id="next">Toggle</th>
+        </tr>
+        <tr ng-repeat="(key, value) in word_table">
+          <td>{{word_status[$index]}}</td>
+          <td>{{value[0]}}</td>
+          <td>{{value[1]}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <hr/>
+  <div class="wrapper">
+    <div class="left" >
+        <img class="column column-50 column-offset-25" ng-src= "/static/img/{{image_src}}" height = "270">
+        <label>Answer: </label>
+        <input type="text" ng-model="answer"></input>
+        <button ng-click="submitAns();runQuiz()">Submit</button>
+        <button ng-click="imgLoad()">Next</button>
+        <button ng-click="resetQuiz();runQuiz();imgLoad()">Reset Q-Table</button>
+        <p><b>Feedback:</b> {{feedback}}</p>
+    </div>
+    <div class="right">
+      <span><b>Current Level:</b> {{col_level[curr_level]}}</span>
+      <table>
+        <caption>Vocabulary Q-Table</caption>
+        <tr>
+          <th id="level">CEFR</th>
+          <th id="back">Back</th>
+          <th id="remain">Remain</th>
+          <th id="next">Next</th>
+        </tr>
+        <tr ng-repeat="(key, value) in qtable">
+          <td>{{col_level[$index]}}</td>
+          <td>{{value[0]}}</td>
+          <td>{{value[1]}}</td>
+          <td>{{value[2]}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+
+  <hr/>
+
+
+</div>
