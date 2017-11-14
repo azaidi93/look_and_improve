@@ -20,12 +20,12 @@ def upload_data():
             }
         )
 
-def create_user():
-    db = client.quiz
+def create_user(db_client, username):
+    db = db_client.quiz
 
     db.user.insert(
         {
-            "name": "Ahmed Zaidi",
+            "name": username,
             "current_s": 0,
             "curr_word": "",
             "q_table": {
@@ -70,4 +70,4 @@ def create_user():
 
 if __name__ == '__main__':
     client = MongoClient('mongodb://127.0.0.1:27017/')
-    create_user()
+    create_user(client, "Ahmed Zaidi")

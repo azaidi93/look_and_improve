@@ -9,6 +9,9 @@ import numpy as np
 import gensim
 import pandas as pd
 from gensim.models.keyedvectors import KeyedVectors
+import settings
+import mongodb
+from pymongo import MongoClient
 
 app = Flask(__name__)
 
@@ -46,7 +49,7 @@ def return_word_table():
     )
     user = mongo.db.user
     word_q = request.data.lower()
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": settings.GLOBAL_USERNAME})
     results = results.get("vocab")
     if results.get(word_q) != None:
         results = results.get(word_q)
@@ -68,7 +71,7 @@ def word_stats():
     output = {}
     user = mongo.db.user
     word = request.data.lower()
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": settings.GLOBAL_USERNAME})
     results = results.get("vocab")
     if results.get(word) != None:
         results = results.get(word)
@@ -83,104 +86,123 @@ def word_stats():
 @app.route('/r_quiz', methods=['POST'])
 def reset():
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
-    RL.reset_table()
+    results = user.find_one({"name": settings.GLOBAL_USERNAME})
+    RL.reset_table(settings.GLOBAL_USERNAME)
     user.update(
-        {'name': 'Ahmed Zaidi'},
+        {'name': settings.GLOBAL_USERNAME},
         {
             '$set': {"current_s": 0}
         }
     )
-    qtable = RL.get_table()
+    qtable = RL.get_table(settings.GLOBAL_USERNAME)
     qtable = qtable.to_dict('records')
     return jsonify(qtable)
 
 @app.route('/r_word', methods=['POST'])
 def reset_word():
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": settings.GLOBAL_USERNAME})
     curr_word = results.get("curr_word")
-    RL_word.reset_table(curr_word)
-    qtable = RL_word.get_table()
+    RL_word.reset_table(curr_word, settings.GLOBAL_USERNAME)
+    qtable = RL_word.get_table(curr_word, settings.GLOBAL_USERNAME)
     qtable = qtable.to_dict('records')
     return jsonify(qtable)
 
 @app.route('/quiz_level', methods=['POST'])
 def quiz_level():
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": settings.GLOBAL_USERNAME})
     observation = results.get("current_s")
     return str(observation)
 
 @app.route('/answer', methods=['POST'])
 def verify_ans():
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": settings.GLOBAL_USERNAME})
     curr_word = results.get("curr_word")
     input_ans = request.data.lower()
     input_ans = input_ans.replace(" ","_")
-    answer, reward = check_ans(input_ans)
-    update(RL,env,reward)
-    update_word(env,reward,curr_word)
-    RL.update_table()
-    RL_word.update_table(curr_word)
+    answer, reward = check_ans(input_ans, settings.GLOBAL_USERNAME)
+    update(RL, env, reward, settings.GLOBAL_USERNAME)
+    update_word(env, reward, curr_word, settings.GLOBAL_USERNAME)
+    RL.update_table(settings.GLOBAL_USERNAME)
+    RL_word.update_table(curr_word, settings.GLOBAL_USERNAME)
     return answer
 
 @app.route('/curr_imgLoad', methods=['POST'])
 def curr_image_load():
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
-    observation = results.get("current_s")
-    curr_word = results.get("curr_word")
+    results = user.find_one({"name": settings.GLOBAL_USERNAME})
+    img_dict = get_curr_image(results)
+    return generate_image_link(img_dict['img_level'], img_dict['curr_word'])
+
+
+def get_curr_image(user_results):
+    observation = user_results.get("current_s")
+    curr_word = user_results.get("curr_word")
     #if curr_word == "":
     #    curr_word = env.get_img_src(observation)
 
     img_level = level.get(observation)
-    return img_level+"/"+curr_word+".jpg"
+    # return img_level, curr_word
+    return {'img_level': img_level, 'curr_word': curr_word}
+
+
 
 @app.route('/imgLoad', methods=['POST'])
+
 def image_load():
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
-    observation = results.get("current_s")
-    curr_image = env.get_img_src(observation)
+    results = user.find_one({"name": settings.GLOBAL_USERNAME})
+    img_dict =  get_image_load(results, user)
+    return generate_image_link(img_dict['img_level'], img_dict['curr_word'])
+
+
+def get_image_load(user_results, user):
+    observation = user_results.get("current_s")
+    curr_image = env.get_img_src(observation, user_results.get("name"))
     img_level = level.get(observation)
     user.update(
-        {'name': 'Ahmed Zaidi'},
+        {'name':  user_results.get("name")},
         {
             '$set': {"curr_word": curr_image}
         }
     )
-    return img_level+"/"+curr_image+".jpg"
+    return {'img_level': img_level, 'curr_word': curr_image}
 
+def generate_image_link(img_level, curr_image):
+    return img_level + "/" + curr_image + ".jpg"
 
 @app.route('/quiz', methods=['POST'])
 def quiz():
-    qtable = RL.get_table()
+    qtable = RL.get_table(settings.GLOBAL_USERNAME)
     qtable = qtable.to_dict('records')
     return jsonify(qtable)
 
 @app.route('/quiz_word', methods=['POST'])
 def quiz_word():
+    return get_quiz_word(settings.GLOBAL_USERNAME)
+
+def get_quiz_word(username):
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": username})
     curr_word = results.get("curr_word")
     observation = results.get("current_s")
     if curr_word == "":
-        curr_word = env.get_img_src(observation)
+        curr_word = env.get_img_src(observation, username)
         user.update(
-            {'name': 'Ahmed Zaidi'},
+            {'name': username},
             {
                 '$set': {"curr_word": curr_word}
             }
         )
-    qtable = RL_word.get_table(curr_word)
+    qtable = RL_word.get_table(curr_word, username)
     qtable = qtable.to_dict('records')
     return jsonify(qtable)
 
-def check_ans(answer):
+def check_ans(answer, username):
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": username})
     curr_word = results.get("curr_word")
     results = results.get("vocab")
     word_results = results.get(curr_word)
@@ -211,7 +233,7 @@ def check_ans(answer):
         incorrect = incorrect+1
 
     user.update(
-        {'name': 'Ahmed Zaidi'},
+        {'name': username},
         {   '$set': {
                 "vocab."+curr_word+".attempts": attempts,
                 "vocab."+curr_word+".incorrect": incorrect,
@@ -223,15 +245,15 @@ def check_ans(answer):
 
     return message,score
 
-def update(RL,env,answer):
+def update(RL,env,answer, username):
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": username})
     observation = results.get("current_s")
     action = RL.choose_action(observation)
-    observation_, reward = env.step(action,answer,observation)
-    RL.learn(observation, action, reward, observation_)
+    observation_, reward = env.step(action, answer, observation)
+    RL.learn(observation, action, reward, observation_, username)
     user.update(
-        {'name': 'Ahmed Zaidi'},
+        {'name': username},
         {
             '$set': {"current_s": observation_}
         }
@@ -239,21 +261,74 @@ def update(RL,env,answer):
 
     return answer
 
-def update_word(env,answer,word):
+def update_word(env,answer,word, username):
     user = mongo.db.user
-    results = user.find_one({"name": "Ahmed Zaidi"})
+    results = user.find_one({"name": username})
     results = results.get("vocab")
     results = results.get(word)
     observation = results.get("current_s")
     action = RL_word.choose_action(observation)
     observation_, reward = env.step_word(action,answer,observation)
-    RL_word.learn(observation, action, reward, observation_, word)
+    RL_word.learn(observation, action, reward, observation_, word, username)
     user.update(
-        {'name': 'Ahmed Zaidi'},
+        {'name': username},
         {
             '$set': {"vocab."+word+".current_s": observation_}
         }
     )
+
+
+
+# chen's code , todo  put into its own module later
+@app.route('/simulate_quiz/quiz', methods=['POST'])
+def quiz_sim():
+    # todo make it into a init_user function.
+    user = mongo.db.user
+    username = request.form['username']
+    results = user.find_one({"name": username})
+    client = MongoClient('mongodb://127.0.0.1:27017/')
+
+    result_img = '';
+    img_dict = {};
+    if not results:
+        mongodb.create_user(client, username)
+        results = user.find_one({"name": username})
+        img_dict = get_image_load(results, user)
+        result_img = generate_image_link(img_dict['img_level'], img_dict['curr_word'])
+        get_quiz_word(username)
+    else:
+        img_dict = get_curr_image(results)
+        result_img = generate_image_link(img_dict['img_level'], img_dict['curr_word'])
+    return jsonify({'level': img_dict['img_level'], 'answer': img_dict['curr_word'], 'image': result_img})
+
+
+
+@app.route('/simulate_quiz/answer', methods=['POST'])
+def answer_sim():
+    user = mongo.db.user
+    username = request.form['username']
+    results = user.find_one({"name": username})
+    answer = int(request.form['answer'])
+
+    
+    curr_word = results.get("curr_word")
+    input_ans = ''
+    if answer:
+        input_ans = curr_word
+
+    # input_ans = input_ans.replace(" ", "_")
+    answer, reward = check_ans(input_ans, username)
+
+    update(RL, env, reward, username)
+    update_word(env, reward, curr_word, username)
+    RL.update_table(username)
+    RL_word.update_table(curr_word, username)
+
+    #generate a new image
+    img_dict = get_image_load(results, user)
+    get_quiz_word(username)
+    result_img = generate_image_link(img_dict['img_level'], img_dict['curr_word'])
+    return jsonify({'level': img_dict['img_level'], 'answer': img_dict['curr_word'], 'image': result_img})
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

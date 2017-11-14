@@ -10,7 +10,7 @@ import random
 import os
 from os.path import basename
 from pymongo import MongoClient
-
+import settings
 
 
 class Quiz(object):
@@ -50,7 +50,7 @@ class Quiz(object):
                     if level == 'C2':
                         self.C2.update({file:level})
 
-    def get_img_src(self,level):
+    def get_img_src(self,level, username):
         i=1
         image = "bike"
         while (i==1):
@@ -66,7 +66,7 @@ class Quiz(object):
                 image = random.choice(self.C1.keys())
             if level == 5:
                 image = random.choice(self.C2.keys())
-            results = self.user.find_one({"name": "Ahmed Zaidi"})
+            results = self.user.find_one({"name": username})
             results = results.get("vocab")
             if results.get(image) == None:
                 i=0
