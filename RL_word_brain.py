@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from pymongo import MongoClient
-
+import settings
 class QLearningTable_Word:
     def __init__(self, actions, learning_rate=0.1, gamma=0.9, epsilon=1):
         client = MongoClient('mongodb://127.0.0.1:27017/')
@@ -18,9 +18,9 @@ class QLearningTable_Word:
             columns=self.actions,    # actions's name
         )
 
-    def reset_table(self,word):
+    def reset_table(self, word, username):
             words = []
-            results = self.user.find_one({"name": "Ahmed Zaidi"})
+            results = self.user.find_one({"name": username})
             results = results.get("vocab")
             print (len(results))
             for key, value in results.items() :
@@ -31,7 +31,7 @@ class QLearningTable_Word:
                     for a in self.action:
                         if l == 0 and a == 0:
                             self.user.update(
-                                {'name': 'Ahmed Zaidi'},
+                                {'name': username},
                                 {
                                     '$set': {"vocab."+word+".q_table."+self.level.get(l)+"_"+self.action.get(a): 0.1}
                                 }
@@ -39,34 +39,33 @@ class QLearningTable_Word:
                             )
                         else:
                             self.user.update(
-                                {'name': 'Ahmed Zaidi'},
+                                {'name': username},
                                 {
                                     '$set': {"vocab."+word+".q_table."+self.level.get(l)+"_"+self.action.get(a): 0}
                                 }
 
                             )
                 self.user.update(
-                    {'name': 'Ahmed Zaidi'},
+                    {'name': username},
                     {
                         '$set': {"vocab."+word+".current_s": 0}
                     }
 
                 )
 
-
-    def update_table(self,word):
+    def update_table(self, word, username):
         for l in self.level:
             for a in self.action:
                 self.user.update(
-                    {'name': 'Ahmed Zaidi'},
+                    {'name': username},
                     {
                         '$set': {"vocab."+word+".q_table."+self.level.get(l)+"_"+self.action.get(a): round(self.q_table.ix[l,a],4)}
                     }
                 )
 
-    def get_table(self,word):
-        self.check_word(word)
-        results = self.user.find_one({"name": "Ahmed Zaidi"})
+    def get_table(self, word, username):
+        self.check_word(word, username)
+        results = self.user.find_one({"name": username})
         results = results.get("vocab")
         results = results.get(word)
         results = results.get("q_"+"table")
@@ -77,16 +76,16 @@ class QLearningTable_Word:
 
         return self.q_table
 
-    def check_word(self,word):
-        results = self.user.find_one({"name": "Ahmed Zaidi"})
+    def check_word(self, word, username):
+        results = self.user.find_one({"name": username})
         results = results.get("vocab")
         if results.get(word) == None:
-            self.create_table(word)
+            self.create_table(word, username)
 
-    def create_table(self,word):
-        results = self.user.find_one({"name": "Ahmed Zaidi"})
+    def create_table(self, word, username):
+        results = self.user.find_one({"name": username})
         self.user.update(
-            {'name': 'Ahmed Zaidi'},
+            {'name': username},
             {   '$set': {
                     "vocab."+word:{
                         "attempts": 0,
@@ -116,12 +115,12 @@ class QLearningTable_Word:
             action = np.random.choice(self.actions)
         return action
 
-    def learn(self, s, a, r, s_, word):
-        self.get_table(word)
+    def learn(self, s, a, r, s_, word, username):
+        self.get_table(word, username)
         q_predict = self.q_table.ix[s, a]
         if s_ != 1:
             q_target = r + self.gamma * self.q_table.ix[s_,:].max()
         else:
             q_target = r
         self.q_table.ix[s, a] += self.lr * (q_target - q_predict)
-        self.update_table(word)
+        self.update_table(word, username)

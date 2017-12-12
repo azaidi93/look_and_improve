@@ -2,7 +2,7 @@ from RL_brain import QLearningTable
 from Quiz import Quiz
 from sys import argv
 import os
-
+import settings
 class Run_app:
     def __init__(self):
         env = Quiz()
@@ -20,7 +20,7 @@ class Run_app:
                 answer = raw_input("Answer: ")
                 observation_, reward = env.step(action,answer,observation)
                 print answer
-                RL.learn(observation, action, reward, observation_)
+                RL.learn(observation, action, reward, observation_, settings.GLOBAL_USERNAME)
                 observation = observation_
 
 

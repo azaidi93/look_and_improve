@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from pymongo import MongoClient
-
+import settings
 class QLearningTable:
     def __init__(self, actions, learning_rate=0.1, gamma=0.9, epsilon=0.9):
         client = MongoClient('mongodb://127.0.0.1:27017/')
@@ -24,13 +24,12 @@ class QLearningTable:
         self.q_table.set_value(4,1,1)
         self.q_table.set_value(5,1,1)
 
-
-    def reset_table(self):
+    def reset_table(self, username):
         for l in self.level:
             for a in self.action:
                 if a == 1:
                     self.user.update(
-                        {'name': 'Ahmed Zaidi'},
+                        {'name': username},
                         {
                             '$set':
                             {
@@ -40,7 +39,7 @@ class QLearningTable:
                     )
                 else:
                     self.user.update(
-                        {'name': 'Ahmed Zaidi'},
+                        {'name': username},
                         {
                             '$set':
                             {
@@ -49,11 +48,11 @@ class QLearningTable:
                         }
                     )
 
-    def update_table(self):
+    def update_table(self, username):
         for l in self.level:
             for a in self.action:
                 self.user.update(
-                    {'name': 'Ahmed Zaidi'},
+                    {'name': username},
                     {
                         '$set':
                         {
@@ -62,8 +61,8 @@ class QLearningTable:
                     }
                 )
 
-    def get_table(self):
-        results = self.user.find_one({"name": "Ahmed Zaidi"})
+    def get_table(self, username):
+        results = self.user.find_one({"name": username})
         results = results.get("q_table")
         for l in self.level:
             for a in self.action:
@@ -84,13 +83,13 @@ class QLearningTable:
             action = np.random.choice(self.actions)
         return action
 
-    def learn(self, s, a, r, s_):
-        self.get_table()
+    def learn(self, s, a, r, s_, username):
+        self.get_table(username)
         q_predict = self.q_table.ix[s, a]
         if s_ != 5:
             q_target = r + self.gamma * self.q_table.ix[s_,:].max()
         else:
             q_target = r
         self.q_table.ix[s, a] += self.lr * (q_target - q_predict)
-        self.update_table()
+        self.update_table(username)
         
